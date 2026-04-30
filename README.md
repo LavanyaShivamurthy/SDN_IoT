@@ -17,6 +17,7 @@ Step 1: In Terminal _1
 	instantiating app simple_switch_13
 
 
+once is done you need to deactivate 
  
 Step 2 :In termina _2
 	1. Running RunCode.sh 

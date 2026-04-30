@@ -31,41 +31,44 @@ import pandas as pd
 # ═══════════════════════════════════════════════════════════════
 # CONFIGURATION
 # ═══════════════════════════════════════════════════════════════
+SCENARIO = "scenario2" 
 BASE_DIR       = "/home/ictlab7/Documents/Learning_Mininet/LSTM_Code"
+
 PCAP_DIR       = os.path.join(BASE_DIR, "pcap_captures")
 CSV_DIR        = os.path.join(BASE_DIR, "csvLSTM")
-EXTRACT_SCRIPT = os.path.join(BASE_DIR, "extract_pcap_to_csv.sh")
+EXTRACT_SCRIPT = os.path.join(BASE_DIR, "extract_pcap_to_csv_old.sh")
 
-OUTPUT_FILE  = os.path.join(CSV_DIR, "icu_all_classes_clean.csv")
-SUMMARY_FILE = os.path.join(CSV_DIR, "icu_dataset_summary.txt")
+OUTPUT_FILE  = os.path.join(CSV_DIR, f"{SCENARIO}_icu_dataset.csv")
+SUMMARY_FILE = os.path.join(CSV_DIR, f"{SCENARIO}_summary.txt")
+
 
 # ── ICU sensor → class mapping ──────────────────────────────
 # Keys are the last segment of the mqtt.topic (case-insensitive).
 # Add aliases here if your Collector.py uses different topic names.
+#May not be used. Just  for reference
 CLASS_MAP = {
     # Class 1 – Emergency & Important
-    "ecg":           1,
-    "pulse_oximeter":1,
-    "bp":            1,
-    "fire":          1,
+    "ecg_monitor":     1,
+    "pulse_oximeter":  1,
+    "bp_sensor":       1,
+    "fire_sensor":     1,
 
     # Class 2 – Emergency but Not Important
-    "emg":           2,
-    "airflow":       2,
-    "barometer":     2,
-    "smoke":         2,
+    "emg_sensor":      2,
+    "airflow_sensor":  2,
+    "barometer":       2,
+    "smoke_sensor":    2,
 
     # Class 3 – Not Emergency but Important
-    "infusion_pump": 3,
-    "glucometer":    3,
-    "gsr":           3,
+    "infusion_pump":   3,
+    "glucometer":      3,
+    "gsr_sensor":      3,
 
     # Class 4 – Not Emergency & Not Important
-    "humidity":      4,
-    "temperature":   4,
-    "co":            4,
+    "humidity_sensor":     4,
+    "temperature_sensor":  4,
+    "co_sensor":           4,
 }
-
 CLASS_LABELS = {
     1: "Emergency & Important",
     2: "Emergency but Not Important",
@@ -78,7 +81,7 @@ CLASS_SENSORS = {
     1: ["ecg", "pulse_oximeter", "bp", "fire"],
     2: ["emg", "airflow", "barometer", "smoke"],
     3: ["infusion_pump", "glucometer", "gsr"],
-    4: ["humidity", "temperature", "co"],
+    4: ["humidity_sensor", "temperature_sensor", "co_sensor"]
 }
 
 # Deduplication key – unique packet identity
@@ -123,7 +126,22 @@ def _extract_sensor_name(topic) -> str:
 
 def _topic_to_class(sensor_name: str) -> int:
     """Map a sensor name to its ICU class (1-4). Returns 0 if unknown."""
-    return CLASS_MAP.get(sensor_name.lower(), 0)
+    
+    s = sensor_name.lower()
+
+    if "ecg" in s or "pulse" in s or "bp" in s or "fire" in s:
+        return 1
+
+    elif "emg" in s or "airflow" in s or "barometer" in s or "smoke" in s:
+        return 2
+
+    elif "infusion" in s or "glucose" in s or "gsr" in s:
+        return 3
+
+    elif "humidity" in s or "temperature" in s or "co" in s:
+        return 4
+
+    return 0
 
 
 def _safe_num(series: pd.Series) -> pd.Series:
@@ -387,6 +405,8 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     print(f"  Unlabelled (class 0): {n_unlabeled:,}  "
           f"(non-MQTT / unrecognised sensor)")
     print(f"  Total columns now  : {len(df.columns)}")
+    print("unique sensors")
+    print(df['sensor_name'].unique())
     return df
 
 
